@@ -1,0 +1,13 @@
+# Habitación y receptores para ubicar dispositivos PROPIOS (entidades con LAB-ID).
+# Copiá este archivo a lab/room.yaml y medí las posiciones reales (metros, origen en una esquina).
+# Los ids deben coincidir con `bluedar node --id ...`; "local" es la PC donde corre `bluedar run`.
+# ref_dbm (RSSI a 1 m) y n (exponente de pérdida) son provisionales hasta calibrar.
+
+room:
+  width_m: 5.0
+  height_m: 4.0
+
+nodes:
+  local:    {x: 0.3, y: 0.3, ref_dbm: -59, n: 2.5}
+  notebook: {x: 4.7, y: 0.3, ref_dbm: -59, n: 2.5}
+  esp32-a:  {x: 2.5, y: 3.7, ref_dbm: -59, n: 2.5}

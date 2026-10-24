@@ -1,0 +1,10 @@
+# Modelos declarados en Apple Proximity Pairing (Continuity 0x07).
+# Clave: los 2 bytes de modelo en el orden en que vienen en el paquete (hex).
+# Solo se agregan valores con fuente publicada o con el session_id de una captura propia.
+
+models:
+  "0e20":
+    name: "AirPods Pro"
+    type: auricular
+    source: "furiousMAC/continuity messages/proximity_pairing.md"
+    # [LOCAL] Unos AirPods Pro emparejados con la PC de desarrollo figuran en Windows con PnP PID 0x200E (mismo valor, otro orden de bytes). Pendiente H3.

@@ -1,0 +1,10 @@
+# Extracto de Bluetooth SIG Assigned Numbers, Company Identifiers.
+# Solo para mostrar el fabricante del formato del bloque: un Company ID no
+# indica el tipo de producto y nunca se usa para clasificar.
+
+companies:
+  0x0006: "Microsoft"
+  0x004C: "Apple"
+  0x0075: "Samsung Electronics"
+  0x00E0: "Google"
+  0x012D: "Sony"

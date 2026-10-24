@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bluedar"
+version = "0.1.0"
+description = "Detector de auriculares y parlantes Bluetooth cercanos basado en anuncios públicos"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Bruno Savarella"}]
+keywords = ["bluetooth", "ble", "advertising", "airpods", "fast-pair", "rssi"]
+requires-python = ">=3.11"
+dependencies = [
+    "bleak>=3.0.2,<4",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pyyaml>=6",
+]
+
+[project.urls]
+Homepage = "https://github.com/Brun02005/BLUE-DAR"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+bluedar = "bluedar.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+bluedar = ["rules/*.yaml", "app/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

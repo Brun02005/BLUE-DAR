@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BLUE-DAR</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>BLUE-DAR</h1>
+      <span class="sub">Anuncios Bluetooth cercanos · clasificación por evidencia</span>
+    </div>
+    <div class="stats" id="stats" aria-live="polite"></div>
+    <div class="actions">
+      <a class="btn" href="/api/export.csv">Exportar CSV</a>
+      <a class="btn" href="/api/export.json">Exportar JSON</a>
+    </div>
+  </header>
+
+  <div id="alerts" class="alerts"></div>
+
+  <section class="filters" aria-label="Filtros">
+    <label>Buscar <input id="f-text" type="search" placeholder="id, familia, modelo, LAB-ID"></label>
+    <label>Clasificación
+      <select id="f-label">
+        <option value="">Todas</option>
+        <option value="audio">Solo posibles audio</option>
+        <option value="auricular">Posible auricular</option>
+        <option value="parlante">Posible parlante</option>
+        <option value="desconocido">Dispositivo desconocido</option>
+        <option value="insuficiente">Clasificación insuficiente</option>
+      </select>
+    </label>
+    <label>RSSI mínimo <input id="f-rssi" type="range" min="-110" max="-30" value="-110"> <output id="f-rssi-out">sin filtro</output></label>
+    <label class="check"><input id="f-present" type="checkbox" checked> Ocultar ausentes</label>
+  </section>
+
+  <main class="layout">
+    <section class="card radar-card" aria-label="Mapa de señal">
+      <div class="card-head">
+        <h2>Mapa de señal en tiempo real</h2>
+        <span class="hint">Centro = esta PC. Más cerca del centro = señal más fuerte (<strong>no metros</strong>). <strong>El ángulo agrupa por clasificación: no indica dirección.</strong></span>
+      </div>
+      <div class="radar-wrap">
+        <svg id="radar" viewBox="0 0 400 400" role="img" aria-label="Entidades presentes según intensidad de señal, agrupadas por clasificación"></svg>
+        <div id="radar-tip" class="tooltip" hidden></div>
+      </div>
+      <div id="radar-legend" class="legend"></div>
+    </section>
+
+    <section class="card search-card" aria-label="Búsqueda por mapa de calor">
+      <div class="card-head">
+        <h2>Búsqueda: mapa de calor (un solo receptor)</h2>
+        <span class="hint">Seleccioná en la tabla el dispositivo a buscar, caminá con esta notebook y hacé clic en el plano donde estás parado en cada paso. El color marca dónde la señal es más fuerte. Más fuerte = más cerca, <strong>no metros</strong>.</span>
+      </div>
+      <div class="search-controls">
+        <span id="search-target" class="search-target"></span>
+        <button class="btn" id="search-undo">Deshacer</button>
+        <button class="btn" id="search-clear">Limpiar</button>
+      </div>
+      <div class="search-wrap">
+        <canvas id="search" role="img" aria-label="Mapa de calor de intensidad de señal según los puntos marcados"></canvas>
+      </div>
+      <div id="search-legend" class="legend"></div>
+    </section>
+
+    <section class="card plan-card" id="plan-card" hidden aria-label="Plano">
+      <div class="card-head">
+        <h2>Plano: ubicación estimada de dispositivos propios</h2>
+        <span class="hint">Solo entidades con LAB-ID. El círculo es la incertidumbre estimada. Con 3 receptores en interiores esperá errores de 1–3 m (ver <code>bluedar simulate</code>).</span>
+      </div>
+      <div class="plan-wrap"><svg id="plan" role="img" aria-label="Plano de la habitación con receptores y posiciones estimadas"></svg></div>
+      <div id="plan-status" class="plan-status"></div>
+    </section>
+
+    <section class="card chart-card" aria-label="Intensidad de señal en el tiempo">
+      <div class="card-head">
+        <h2>Intensidad de señal (RSSI suavizado)</h2>
+        <span class="hint">Por defecto se grafican las 3 señales más fuertes; marcá hasta 5 filas para elegir. Las bandas son categorías de señal de este adaptador, <strong>no distancias</strong>.</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart" role="img" aria-label="RSSI en el tiempo de las entidades seleccionadas"></canvas>
+        <div id="tooltip" class="tooltip" hidden></div>
+      </div>
+      <div id="legend" class="legend"></div>
+    </section>
+
+    <section class="card table-card" aria-label="Dispositivos observados">
+      <div class="table-scroll">
+        <table id="table">
+          <thead>
+            <tr>
+              <th data-sort="plot" class="narrow" title="Graficar">📈</th>
+              <th data-sort="present">Estado</th>
+              <th data-sort="id">Entidad</th>
+              <th data-sort="label">Clasificación</th>
+              <th data-sort="confidence">Confianza</th>
+              <th data-sort="family">Familia / modelo</th>
+              <th data-sort="rssi" class="num">Señal</th>
+              <th data-sort="dist" class="num">Distancia aprox.</th>
+              <th data-sort="trend">Tendencia</th>
+              <th data-sort="packets" class="num">Paquetes</th>
+              <th data-sort="last_seen">Último</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="foot">Las direcciones aleatorias rotan: un mismo dispositivo puede aparecer como varias entidades. Las entidades son pseudónimos válidos solo en esta sesión.</p>
+    </section>
+
+    <aside class="card detail" id="detail" aria-label="Detalle">
+      <p class="muted">Seleccioná una fila para ver por qué se clasificó así.</p>
+    </aside>
+
+    <section class="card events" aria-label="Eventos">
+      <h2>Eventos</h2>
+      <ol id="events"></ol>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

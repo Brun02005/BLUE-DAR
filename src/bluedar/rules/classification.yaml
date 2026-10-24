@@ -1,0 +1,139 @@
+# Reglas de clasificación de BLUE-DAR.
+#
+# Cada regla vincula un detector (código en classify/detectors.py) con una
+# afirmación, un nivel de evidencia, su fuente y sus falsos positivos conocidos.
+#
+# Niveles (de mayor a menor): estandar > fabricante_doc > fabricante_re > heuristico
+#   estandar        campo definido por el Bluetooth SIG que declara el tipo
+#   fabricante_doc  formato de fabricante con documentación oficial
+#   fabricante_re   formato documentado solo por ingeniería inversa
+#   heuristico      indicio (nombre, servicio no exclusivo de audio)
+#
+# claim.type: auricular | parlante | audio (audio sin tipo) | no_audio | null (solo familia)
+#   Si el detector devuelve un tipo (CoD, Appearance, tabla de modelos), ese tipo reemplaza a claim.type.
+#
+# validated: null hasta medirla con el plan experimental. Formato al completarla:
+#   validated: {precision: 0.95, recall: 0.60, n: 40, sessions: ["2026-11-02_E5_r1"], date: "2026-11-02"}
+
+version: 1
+
+rules:
+  - id: R-APP-07
+    detector: apple_continuity
+    params: {types: [0x07]}
+    claim: {type: auricular, family: "Apple/Beats (Proximity Pairing)"}
+    level: fabricante_re
+    source: "furiousMAC/continuity messages/proximity_pairing.md; Celosia & Cunche, PoPETs 2020"
+    false_positives: "Falsificable: herramientas de BLE spam (Flipper Zero, ESP32 'AppleJuice') emiten este mismo mensaje. Formato no oficial; puede cambiar con el firmware."
+    validated: null
+
+  - id: R-APP-12
+    detector: apple_continuity
+    params: {types: [0x12]}
+    claim: {type: null, family: "Apple Find My (tipo no determinable)"}
+    level: fabricante_re
+    source: "Apple Platform Security, Find My; Heinrich et al., PoPETs 2021; AirGuard (seemoo-lab), filtros de AirTag.kt/AirPods.kt"
+    false_positives: "Lo emiten iPhones, AirTags, AirPods y accesorios de terceros. La pista de tipo del status byte (0x10 AirTag, 0x18 AirPods) sale de ingeniería inversa y está sin validar con dispositivos propios: por eso no se declara tipo de audio. La clave rota cada ~15 min: nunca identifica un dispositivo concreto."
+    validated: null
+
+  - id: R-APP-AIRPLAY
+    detector: apple_continuity
+    params: {types: [0x09]}
+    claim: {type: null, family: "Apple AirPlay Target (Apple TV / HomePod / Mac)"}
+    level: fabricante_re
+    source: "furiousMAC/continuity; Celosia & Cunche, PoPETs 2020"
+    false_positives: "Incluye parlantes (HomePod) y equipos que no lo son: no se infiere tipo."
+    validated: null
+
+  - id: R-APP-NONAUDIO
+    detector: apple_continuity
+    params: {types: [0x05, 0x0C, 0x10]}
+    claim: {type: no_audio, family: "Apple (teléfono / tablet / computadora / reloj)"}
+    level: fabricante_re
+    source: "furiousMAC/continuity; Celosia & Cunche, PoPETs 2020"
+    false_positives: "[VERIFICAR] no está confirmado que ningún accesorio de audio emita Nearby Info (0x10)."
+    validated: null
+
+  - id: R-FP-MODEL
+    detector: fast_pair
+    params: {discoverable: true}
+    claim: {type: audio, family: "Google Fast Pair (modo emparejamiento)"}
+    level: fabricante_doc
+    source: "developers.google.com/nearby/fast-pair/specifications/service/provider"
+    false_positives: "Fast Pair no es exclusivo de audio. El tipo solo se conoce si el Model ID está en fastpair_models.yaml."
+    validated: null
+
+  - id: R-FP-ACCOUNT
+    detector: fast_pair
+    params: {discoverable: false}
+    claim: {type: audio, family: "Google Fast Pair"}
+    level: heuristico
+    source: "developers.google.com/nearby/fast-pair/specifications/service/provider"
+    false_positives: "Sin Model ID: no hay declaración de tipo, solo compatibilidad con Fast Pair."
+    validated: null
+
+  - id: R-SWP-COD
+    detector: swift_pair
+    params: {require_cod: true}
+    claim: {type: null, family: "Microsoft Swift Pair (modo emparejamiento)"}
+    level: fabricante_doc
+    source: "learn.microsoft.com/windows-hardware/design/component-guidelines/bluetooth-swift-pair"
+    false_positives: "[VERIFICAR] posición del CoD dentro del payload, tomada de las figuras de la documentación."
+    validated: null
+
+  - id: R-SWP
+    detector: swift_pair
+    params: {require_cod: false}
+    claim: {type: null, family: "Microsoft Swift Pair (modo emparejamiento)"}
+    level: fabricante_doc
+    source: "learn.microsoft.com/windows-hardware/design/component-guidelines/bluetooth-swift-pair"
+    false_positives: "Mouses, teclados y otros periféricos también usan Swift Pair."
+    validated: null
+
+  - id: R-APPEAR
+    detector: appearance
+    params: {}
+    claim: {type: null, family: "Appearance BLE"}
+    level: estandar
+    source: "Bluetooth SIG Assigned Numbers, Appearance Values"
+    false_positives: "Autodeclarado, no autenticado."
+    validated: null
+
+  - id: R-COD
+    detector: class_of_device
+    params: {}
+    claim: {type: null, family: "Class of Device"}
+    level: estandar
+    source: "Bluetooth SIG Assigned Numbers, Class of Device"
+    false_positives: "Autodeclarado, no autenticado. 'Portable Audio' y 'Car audio' no se tipan."
+    validated: null
+
+  - id: R-LEA
+    detector: service_uuid16
+    params: {uuids: [0x184E, 0x184F, 0x1850, 0x1851, 0x1852, 0x1853, 0x1856]}
+    claim: {type: audio, family: "LE Audio"}
+    level: estandar
+    source: "Bluetooth SIG Assigned Numbers, GATT Services (PACS, ASCS, BASS, Broadcast Audio)"
+    false_positives: "Transmisores Auracast (TV, teléfonos) anuncian broadcast sin ser auriculares ni parlantes."
+    validated: null
+
+  - id: R-NAME
+    detector: name_hint
+    params: {}
+    claim: {type: null, family: "Nombre local"}
+    level: heuristico
+    source: "Patrones de nombre (name_hints, abajo)"
+    false_positives: "Los nombres son texto libre, editables por el usuario o genéricos."
+    validated: null
+
+# Palabras clave buscadas en el nombre local (sin distinguir mayúsculas).
+# El nombre se descarta después de calcular la categoría (capa de privacidad).
+name_hints:
+  auricular: [airpods, buds, earbud, earphone, headphone, headset, auricular, "wh-", "wf-", tws]
+  parlante: [speaker, parlante, soundbar, boombox, party, bocina]
+
+# Señales de posible falsificación (no cambian la clase; agregan una advertencia).
+spam:
+  window_s: 10
+  # Valor provisional: ajustar con capturas propias (E1/E3).
+  max_distinct_proximity_pairing_addresses: 6

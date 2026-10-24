@@ -1,0 +1,8 @@
+# Model IDs de Google Fast Pair (24 bits, hex de 6 dígitos).
+# El registro de Google no es público: se agregan solo Model IDs observados en
+# dispositivos propios, con el session_id de la captura.
+#
+# Ejemplo:
+#   "a1b2c3": {name: "Marca Modelo", type: auricular, source: "lab/manifests/2026-11-02_E3_r1.json"}
+
+models: {}
